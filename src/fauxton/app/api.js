@@ -134,7 +134,7 @@ function(app, Fauxton) {
     // immediately if its already done, but this way the RouteObject.route
     // function can rebuild the deferred as needed
     render: function(route, masterLayout, args) {
-      this.route.apply(this, args);
+      this.route.call(this, route, args);
 
       if (this.renderedState === true) {
         this.rerender.apply(this, arguments);

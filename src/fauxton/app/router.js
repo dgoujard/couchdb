@@ -109,10 +109,10 @@ function(req, app, Initialize, FauxtonAPI, Fauxton, Layout, Databases, Documents
 
     addModuleRouteObject: function(routeObject) {
       var masterLayout = this.masterLayout;
-      _.each(routeObject.routes, function(route) {
+      _.each(routeObject.get('routes'), function(route) {
         //this.route(route, route.toString(), _.partial(routeObject.renderWith, route, this.masterLayout));
         this.route(route, route.toString(), function() {
-          routeObject.render(route, masterLayout, arguments);
+          routeObject.render(route, masterLayout, Array.prototype.slice.call(arguments));
         });
       }, this);
     },
