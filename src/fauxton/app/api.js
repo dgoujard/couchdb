@@ -113,13 +113,52 @@ function(app, Fauxton) {
     events: {},
     data: {},
     crumbs: [],
-    layout: null,
+    layout: "with_sidebar",
     apiUrl: null,
-    establish: null
+    establish: function() {}
   }, {
     route: function() {},
     initialize: function() {},
-    renderWith: function(layout) {
+    renderWith: function(route, masterLayout, args) {
+      var routeObject = this;
+      this.route.apply(this, args);
+
+      masterLayout.setTemplate(this.layout);
+      masterLayout.clearBreadcrumbs();
+
+      if (this.crumbs.length) {
+        masterLayout.setBreadcrumbs(new Fauxton.Breadcrumbs({
+          crumbs: this.crumbs
+        }));
+      }
+
+      $.when.apply(this, this.establish()).done(function(resp) {
+        _.each(routeObject.views, function(view, selector) {
+          masterLayout.setView(selector, view);
+
+          $.when.apply(null, view.establish()).then(function(resp) {
+            masterLayout.renderView(selector);
+          }, function(resp) {
+            view.establishError = {
+              error: true,
+              reason: resp
+            };
+            masterLayout.renderView(selector);
+          });
+
+          var hooks = masterLayout.hooks[selector];
+
+          if(hooks){
+            _.each(hooks, function(hook){
+              if (_.any(hook.routes, function(route){return route == boundRoute;})){
+                hook.callback(view);
+              }
+            });
+          }
+        });
+      });
+
+      if (this.get('apiUrl')) masterLayout.apiBar.update(this.get('apiUrl'));
     },
     get: function(key) {
       return _.isFunction(this[key]) ? this[key]() : this[key];

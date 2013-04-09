@@ -29,6 +29,8 @@ function(app, FauxtonAPI, Databases, Views) {
       {"name": "Databases", "link": "/_all_dbs"}
     ],
 
+    routes: ["", "index.html", "_all_dbs(:params)"],
+
     apiUrl: function() {
       return this.databases.url();
     },
@@ -109,11 +111,15 @@ function(app, FauxtonAPI, Databases, Views) {
     };
   };
 
+  /*
   Databases.Routes = {
     "": allDbsCallback,
     "index.html": allDbsCallback,
     "_all_dbs(:params)": allDbsCallback
   };
+  */
+
+  Databases.RouteObjects = [allDbsRouteObject];
 
   return Databases;
 });
