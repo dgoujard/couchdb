@@ -22,7 +22,7 @@ define([
 ],
 
 function(app, FauxtonAPI, Databases, Views) {
-  var allDbsRouteObject = Databases.AllDbsRouteObject = new FauxtonAPI.RouteObject({
+  var AllDbsRouteObject = FauxtonAPI.RouteObject.extend({
     layout: "with_sidebar",
 
     crumbs: [
@@ -39,12 +39,21 @@ function(app, FauxtonAPI, Databases, Views) {
       this.databases = new Databases.List();
       this.deferred = FauxtonAPI.Deferred();
 
-      this.setView("#dashboard-content", new Views.List({
+      this.databasesView = this.setView("#dashboard-content", new Views.List({
           collection: this.databases
       }));
-      this.setView("#sidebar-content", new Views.Sidebar({
+      this.sidebarView = this.setView("#sidebar-content", new Views.Sidebar({
           collection: this.databases
       }));
+    },
+
+    route: function() {
+      var params = app.getParams();
+      this.databasesView.setPage(params.page);
+    },
+
+    rerender: function() {
+      this.databasesView.render();
     },
 
     establish: function() {
@@ -119,7 +128,7 @@ function(app, FauxtonAPI, Databases, Views) {
   };
   */
 
-  Databases.RouteObjects = [allDbsRouteObject];
+  Databases.RouteObjects = [new AllDbsRouteObject()];
 
   return Databases;
 });

@@ -112,7 +112,7 @@ function(req, app, Initialize, FauxtonAPI, Fauxton, Layout, Databases, Documents
       _.each(routeObject.routes, function(route) {
         //this.route(route, route.toString(), _.partial(routeObject.renderWith, route, this.masterLayout));
         this.route(route, route.toString(), function() {
-          routeObject.renderWith(route, masterLayout, arguments);
+          routeObject.render(route, masterLayout, arguments);
         });
       }, this);
     },

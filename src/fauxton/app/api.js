@@ -104,6 +104,9 @@ function(app, Fauxton) {
     this.addEvents();
   };
 
+  // Piggy-back on Backbone's self-propagating extend function
+  FauxtonAPI.RouteObject.extend = Backbone.Model.extend;
+
   var routeObjectOptions = ["views", "routes", "events", "data", "crumbs", "layout", "apiUrl", "establish"];
 
   _.extend(FauxtonAPI.RouteObject.prototype, Backbone.Events, {
@@ -115,13 +118,34 @@ function(app, Fauxton) {
     crumbs: [],
     layout: "with_sidebar",
     apiUrl: null,
-    establish: function() {}
-  }, {
+    renderedState: false,
+    currTab: "databases",
+    establish: function() {},
     route: function() {},
-    initialize: function() {},
+    initialize: function() {}
+  }, {
+    // By default, rerender is a full rerender
+    rerender: function() {
+      this.renderWith.apply(this, arguments);
+    },
+
+    // TODO:: combine this and the renderWith function
+    // All the things should go through establish, as it will resolve
+    // immediately if its already done, but this way the RouteObject.route
+    // function can rebuild the deferred as needed
+    render: function(route, masterLayout, args) {
+      this.route.apply(this, args);
+
+      if (this.renderedState === true) {
+        this.rerender.apply(this, arguments);
+      } else {
+        this.renderWith.apply(this, arguments);
+      }
+    },
+
     renderWith: function(route, masterLayout, args) {
       var routeObject = this;
-      this.route.apply(this, args);
+      //this.route.apply(this, args);
 
       masterLayout.setTemplate(this.layout);
       masterLayout.clearBreadcrumbs();
@@ -159,10 +183,15 @@ function(app, Fauxton) {
       });
 
       if (this.get('apiUrl')) masterLayout.apiBar.update(this.get('apiUrl'));
+
+      // Track that we've done a full initial render
+      this.renderedState = true;
     },
+
     get: function(key) {
       return _.isFunction(this[key]) ? this[key]() : this[key];
     },
+
     addEvents: function(events) {
       events = events || this.get('events');
       _.each(events, function(method, event) {
@@ -174,18 +203,22 @@ function(app, Fauxton) {
         this.on(event, method);
       }, this);
     },
+
     _configure: function(options) {
-      /*
       _.each(_.intersection(_.keys(options), routeObjectOptions), function(key) {
         this[key] = options[key];
       }, this);
-      */
-      _.each(options, function(val, key) { this[key] = val; }, this);
     },
+
+    getView: function(selector) {
+      return this.views[selector];
+    },
+
     setView: function(selector, view) {
       this.views[selector] = view;
       return view;
     },
+
     getViews: function() {
       return this.views;
     }
