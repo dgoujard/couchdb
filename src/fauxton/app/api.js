@@ -96,6 +96,62 @@ function(app, Fauxton) {
     }
   });
 
+  FauxtonAPI.RouteObject = function(options) {
+    this._options = options;
+
+    this._configure(options || {});
+    this.initialize.apply(this, arguments);
+    this.addEvents();
+  };
+
+  var routeObjectOptions = ["views", "routes", "events", "data", "crumbs", "layout", "apiUrl", "establish"];
+
+  _.extend(FauxtonAPI.RouteObject.prototype, Backbone.Events, {
+    // Should these be default vals or empty funcs?
+    views: {},
+    routes: {},
+    events: {},
+    data: {},
+    crumbs: [],
+    layout: null,
+    apiUrl: null,
+    establish: null
+  }, {
+    route: function() {},
+    initialize: function() {},
+    renderWith: function(layout) {
+    },
+    get: function(key) {
+      return _.isFunction(this[key]) ? this[key]() : this[key];
+    },
+    addEvents: function(events) {
+      events = events || this.get('events');
+      _.each(events, function(method, event) {
+        if (!_.isFunction(method) && !_.isFunction(this[method])) {
+          throw new Error("Invalid method: "+method);
+        }
+        method = _.isFunction(method) ? method : this[method];
+
+        this.on(event, method);
+      }, this);
+    },
+    _configure: function(options) {
+      /*
+      _.each(_.intersection(_.keys(options), routeObjectOptions), function(key) {
+        this[key] = options[key];
+      }, this);
+      */
+      _.each(options, function(val, key) { this[key] = val; }, this);
+    },
+    setView: function(selector, view) {
+      this.views[selector] = view;
+      return view;
+    },
+    getViews: function() {
+      return this.views;
+    }
+  });
+
   app.fauxtonAPI = FauxtonAPI;
   return app.fauxtonAPI;
 });

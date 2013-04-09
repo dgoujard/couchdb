@@ -16,10 +16,59 @@ define([
   "api",
 
   // Modules
-  "modules/databases/resources"
+  "modules/databases/resources",
+  // TODO:: fix the include flow modules so we don't have to require views here
+  "modules/databases/views"
 ],
 
-function(app, FauxtonAPI, Databases) {
+function(app, FauxtonAPI, Databases, Views) {
+  var allDbsRouteObject = Databases.AllDbsRouteObject = new FauxtonAPI.RouteObject({
+    layout: "with_sidebar",
+
+    crumbs: [
+      {"name": "Databases", "link": "/_all_dbs"}
+    ],
+
+    apiUrl: function() {
+      return this.databases.url();
+    },
+
+    initialize: function() {
+      this.databases = new Databases.List();
+      this.deferred = FauxtonAPI.Deferred();
+
+      this.setView("#dashboard-content", new Views.List({
+          collection: this.databases
+      }));
+      this.setView("#sidebar-content", new Views.Sidebar({
+          collection: this.databases
+      }));
+    },
+
+    establish: function() {
+      var databases = this.databases;
+      var deferred = this.deferred;
+
+      databases.fetch().done(function(resp) {
+        $.when.apply(null, databases.map(function(database) {
+          return database.status.fetch();
+        })).done(function(resp) {
+          deferred.resolve();
+        });
+      });
+
+      return [deferred];
+    },
+
+    mrEvent: function() {
+      console.log("Triggering a most excellent event!!!!");
+    },
+
+    events: {
+      "myrandom_event": "mrEvent"
+    }
+  });
+
   var allDbsCallback = function() {
     var data = {
       databases: new Databases.List()
