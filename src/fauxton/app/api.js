@@ -111,7 +111,7 @@ function(app, Fauxton) {
 
   _.extend(FauxtonAPI.RouteObject.prototype, Backbone.Events, {
     // Should these be default vals or empty funcs?
-    views: {},
+    _views: {},
     routes: {},
     events: {},
     data: {},
@@ -139,6 +139,7 @@ function(app, Fauxton) {
       if (this.renderedState === true) {
         this.rerender.apply(this, arguments);
       } else {
+        this.preloadViews();
         this.renderWith.apply(this, arguments);
       }
     },
@@ -149,15 +150,16 @@ function(app, Fauxton) {
 
       masterLayout.setTemplate(this.layout);
       masterLayout.clearBreadcrumbs();
+      var crumbs = this.get('crumbs');
 
-      if (this.crumbs.length) {
+      if (crumbs.length) {
         masterLayout.setBreadcrumbs(new Fauxton.Breadcrumbs({
-          crumbs: this.crumbs
+          crumbs: crumbs
         }));
       }
 
       $.when.apply(this, this.establish()).done(function(resp) {
-        _.each(routeObject.views, function(view, selector) {
+        _.each(routeObject.getViews(), function(view, selector) {
           masterLayout.setView(selector, view);
 
           $.when.apply(null, view.establish()).then(function(resp) {
@@ -183,9 +185,15 @@ function(app, Fauxton) {
       });
 
       if (this.get('apiUrl')) masterLayout.apiBar.update(this.get('apiUrl'));
-
+      
       // Track that we've done a full initial render
       this.renderedState = true;
+    },
+
+    preloadViews: function () {
+      _.each(this.get('views'), function (view, selector) {
+        this.setView(selector, view);
+      }, this);
     },
 
     get: function(key) {
@@ -211,16 +219,20 @@ function(app, Fauxton) {
     },
 
     getView: function(selector) {
-      return this.views[selector];
+      return this._views[selector];
     },
 
     setView: function(selector, view) {
-      this.views[selector] = view;
+      this._views[selector] = view;
       return view;
     },
 
     getViews: function() {
-      return this.views;
+      return this._views;
+    },
+
+    clearViews: function () {
+      this._views = {};
     }
   });
 

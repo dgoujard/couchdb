@@ -35,24 +35,30 @@ function(app, FauxtonAPI, Databases, Views) {
       return this.databases.url();
     },
 
-    initialize: function() {
+    views: function() {
       this.databases = new Databases.List();
       this.deferred = FauxtonAPI.Deferred();
 
       this.databasesView = this.setView("#dashboard-content", new Views.List({
           collection: this.databases
       }));
+
+      this.databasesView.setPage(this.dbPage);
+
       this.sidebarView = this.setView("#sidebar-content", new Views.Sidebar({
           collection: this.databases
       }));
+
+      return {};
     },
 
     route: function() {
       var params = app.getParams();
-      this.databasesView.setPage(params.page);
+      this.dbPage = params.page;
     },
 
     rerender: function() {
+      this.databasesView.setPage(this.dbPage);
       this.databasesView.render();
     },
 

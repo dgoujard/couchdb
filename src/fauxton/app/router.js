@@ -99,20 +99,29 @@ function(req, app, Initialize, FauxtonAPI, Fauxton, Layout, Databases, Documents
 
   var Router = app.router = Backbone.Router.extend({
     routes: {},
+    routeObjects: [],
 
     // These moduleRoutes functions are aguably better outside but
     // need access to the Router instance which is not created in this
     // module
     addModuleRoute: function(generator, route) {
-      this.route(route, route.toString(), generateRoute(generator, route));
+      //this.route(route, route.toString(), generateRoute(generator, route));
     },
 
     addModuleRouteObject: function(routeObject) {
+      var self = this;
+      this.routeObjects.push(routeObject);
+      console.log(routeObject);
       var masterLayout = this.masterLayout;
       _.each(routeObject.get('routes'), function(route) {
-        //this.route(route, route.toString(), _.partial(routeObject.renderWith, route, this.masterLayout));
         this.route(route, route.toString(), function() {
+          if (self.activeRouteObject && routeObject !== self.activeRouteObject) {
+            self.activeRouteObject.renderedState = false;
+          }
+
           routeObject.render(route, masterLayout, Array.prototype.slice.call(arguments));
+
+          self.activeRouteObject = routeObject;
         });
       }, this);
     },
@@ -130,6 +139,7 @@ function(req, app, Initialize, FauxtonAPI, Fauxton, Layout, Databases, Documents
           // This is pure routes the addon provides
           if (module.Routes) {
             _.each(module.Routes, this.addModuleRoute, this);
+            _.each(module.RouteObjects, this.addModuleRouteObject, this);
           }
         }
       }, this);

@@ -11,13 +11,13 @@
 // the License.
 
 define([
-  "app",
+       "app",
 
-  "api",
+       "api",
 
-  // Modules
-  "modules/documents/resources",
-  "modules/databases/base"
+       // Modules
+       "modules/documents/resources",
+       "modules/databases/base"
 ],
 
 function(app, FauxtonAPI, Documents, Databases) {
@@ -96,8 +96,8 @@ function(app, FauxtonAPI, Documents, Databases) {
     data.designDocs = new Documents.AllDocs(null, {
       database: data.database,
       params: {startkey: '"_design"',
-               endkey: '"_design1"',
-               include_docs: true}
+        endkey: '"_design1"',
+        include_docs: true}
     });
 
     return {
@@ -178,20 +178,33 @@ function(app, FauxtonAPI, Documents, Databases) {
     };
   };
 
-  Documents.Routes = {
-    //"database/:database/:doc/code_editor": codeEditorCallback,
-    //"database/:database/:doc": codeEditorCallback,
-    "database/:database/_design%2F:doc": function(database, doc) {
-      var docID = "_design/"+doc;
-      return codeEditorCallback(database, docID);
+
+  var DocumentsRouteObject = FauxtonAPI.RouteObject.extend({
+    layout: "with_tabs_sidebar",
+
+    crumbs: function () {
+      return [
+        {"name": "Databases", "link": "/_all_dbs"},
+        {"name": this.data.database.id, "link": Databases.databaseUrl(this.data.database)}
+      ];
     },
 
-    "database/:database/_all_docs(:extra)": function(databaseName, page) {
-      var data = {
-        database: new Databases.Model({id:databaseName})
+    routes: ["database/:database/_all_docs(:extra)"],
+
+    apiUrl: function() {
+      return this.data.database.allDocs.url();
+    },
+
+    route: function(route, params) {
+      this.databaseName = params[0];
+    },
+
+    views: function () {
+      this.data = {
+        database: new Databases.Model({id:this.databaseName})
       };
-      data.designDocs = new Documents.AllDocs(null, {
-        database: data.database,
+      this.data.designDocs = new Documents.AllDocs(null, {
+        database: this.data.database,
         params: {startkey: '"_design"',
           endkey: '"_design1"',
           include_docs: true}
@@ -199,144 +212,187 @@ function(app, FauxtonAPI, Documents, Databases) {
 
       var options = app.getParams();
       options.include_docs = true;
-      data.database.buildAllDocs(options);
+      this.data.database.buildAllDocs(options);
 
-      return {
-        layout: "with_tabs_sidebar",
+      this.setView("#dashboard-content", new Documents.Views.AllDocsList({
+        collection: this.data.database.allDocs
+      }));
 
-        data: data,
+      this.setView("#sidebar-content", new Documents.Views.Sidebar({
+        collection: this.data.designDocs
+      }));
 
-        crumbs: [
-          {"name": "Databases", "link": "/_all_dbs"},
-          {"name": data.database.id, "link": Databases.databaseUrl(data.database)}
-        ],
+      this.setView("#tabs", new Documents.Views.Tabs({
+        collection: this.data.designDocs,
+        database: this.data.database
+      }));
 
-        views: {
-          "#dashboard-content": new Documents.Views.AllDocsList({
-            collection: data.database.allDocs
-          }),
-
-          "#sidebar-content": new Documents.Views.Sidebar({
-            collection: data.designDocs
-          }),
-
-          "#tabs": new Documents.Views.Tabs({
-            collection: data.designDocs,
-            database: data.database
-          })
-        },
-
-        apiUrl: data.database.allDocs.url()
-      };
-    },
-
-    "database/:database/_changes(:params)": function(databaseName, params) {
-      var data = {
-        database: new Databases.Model({id:databaseName})
-      };
-
-      var options = app.getParams();
-      data.database.buildChanges(options);
-
-      return {
-        layout: "with_tabs",
-
-        data: data,
-
-        crumbs: [
-          {"name": "Databases", "link": "/_all_dbs"},
-          {"name": data.database.id, "link": Databases.databaseUrl(data.database)},
-          {"name": "_changes", "link": "/_changes"}
-        ],
-
-        views: {
-          "#dashboard-content": new Documents.Views.Changes({
-            model: data.database
-          }),
-
-          "#tabs": new Documents.Views.Tabs({
-            collection: data.designDocs,
-            database: data.database,
-            active_id: 'changes'
-          })
-        },
-
-        apiUrl: data.database.changes.url()
-      };
-    },
-
-    "database/:database/new": newDocCodeEditorCallback,
-    "database/:database/new_view": newViewEditorCallback,
-
-    // TODO: fix optional search params
-    // Can't get ":view(?*search)" to work
-    // However ":view?*search" does work
-    //"database/:database/_design/:ddoc/_view/:view(\?*options)": function(databaseName, ddoc, view, options) {
-    "database/:database/_design/:ddoc/_view/:view": function(databaseName, ddoc, view, options) {
-      // hack around backbone router limitations
-      view = view.replace(/\?.*$/,'');
-      var params = app.getParams();
-      var data = {
-        database: new Databases.Model({id:databaseName})
-      };
-
-      data.indexedDocs = new Documents.IndexCollection(null, {
-        database: data.database,
-        design: ddoc,
-        view: view,
-        params: params
-      });
-
-      data.designDocs = new Documents.AllDocs(null, {
-        database: data.database,
-        params: {startkey: '"_design"',
-          endkey: '"_design1"',
-          include_docs: true}
-      });
-
-      var ddocInfo = {
-        id: "_design/" + ddoc,
-        currView: view,
-        designDocs: data.designDocs
-      };
-
-      return {
-        layout: "with_tabs_sidebar",
-
-        data: data,
-        // TODO: change dashboard-content
-        views: {
-          "#dashboard-content": new Documents.Views.AllDocsList({
-            collection: data.indexedDocs,
-            nestedView: Documents.Views.Row,
-            viewList: true,
-            ddocInfo: ddocInfo,
-            params: params
-          }),
-
-          "#sidebar-content": new Documents.Views.Sidebar({
-            collection: data.designDocs,
-            ddocInfo: ddocInfo
-          }),
-
-          "#tabs": new Documents.Views.Tabs({
-            collection: data.designDocs,
-            database: data.database
-          })
-        },
-
-        crumbs: [
-          {"name": "Databases", "link": "/_all_dbs"},
-          {"name": data.database.id, "link": Databases.databaseUrl(data.database)},
-          {"name": ddoc + "/" + view, "link": data.indexedDocs.url()}
-        ],
-        // TODO: change to view URL
-        apiUrl: data.indexedDocs.url()
-      };
+      return {};
     }
-  };
+  });
 
-  Documents.RouteObjects = [new DocEditorRouteObject()];
+
+
+
+  /* Documents.Routes = {
+  //"database/:database/:doc/code_editor": codeEditorCallback,
+  //"database/:database/:doc": codeEditorCallback,
+  "database/:database/_design%2F:doc": function(database, doc) {
+  var docID = "_design/"+doc;
+  return codeEditorCallback(database, docID);
+  },
+
+  "database/:database/_all_docs(:extra)": function(databaseName, page) {
+  var data = {
+database: new Databases.Model({id:databaseName})
+};
+data.designDocs = new Documents.AllDocs(null, {
+database: data.database,
+params: {startkey: '"_design"',
+endkey: '"_design1"',
+include_docs: true}
+});
+
+var options = app.getParams();
+options.include_docs = true;
+data.database.buildAllDocs(options);
+
+return {
+layout: "with_tabs_sidebar",
+
+data: data,
+
+crumbs: [
+{"name": "Databases", "link": "/_all_dbs"},
+{"name": data.database.id, "link": Databases.databaseUrl(data.database)}
+],
+
+views: {
+"#dashboard-content": new Documents.Views.AllDocsList({
+collection: data.database.allDocs
+}),
+
+"#sidebar-content": new Documents.Views.Sidebar({
+collection: data.designDocs
+}),
+
+"#tabs": new Documents.Views.Tabs({
+collection: data.designDocs,
+database: data.database
+})
+},
+
+apiUrl: data.database.allDocs.url()
+};
+},
+
+"database/:database/_changes(:params)": function(databaseName, params) {
+var data = {
+database: new Databases.Model({id:databaseName})
+};
+
+var options = app.getParams();
+data.database.buildChanges(options);
+
+return {
+layout: "with_tabs",
+
+data: data,
+
+crumbs: [
+{"name": "Databases", "link": "/_all_dbs"},
+{"name": data.database.id, "link": Databases.databaseUrl(data.database)},
+{"name": "_changes", "link": "/_changes"}
+],
+
+views: {
+         "#dashboard-content": new Documents.Views.Changes({
+model: data.database
+}),
+
+         "#tabs": new Documents.Views.Tabs({
+collection: data.designDocs,
+database: data.database,
+active_id: 'changes'
+})
+},
+
+apiUrl: data.database.changes.url()
+  };
+},
+
+  "database/:database/new": newDocCodeEditorCallback,
+  "database/:database/new_view": newViewEditorCallback,
+
+  // TODO: fix optional search params
+  // Can't get ":view(?*search)" to work
+  // However ":view?*search" does work
+  //"database/:database/_design/:ddoc/_view/:view(\?*options)": function(databaseName, ddoc, view, options) {
+  "database/:database/_design/:ddoc/_view/:view": function(databaseName, ddoc, view, options) {
+    // hack around backbone router limitations
+    view = view.replace(/\?.*$/,'');
+    var params = app.getParams();
+    var data = {
+database: new Databases.Model({id:databaseName})
+    };
+
+    data.indexedDocs = new Documents.IndexCollection(null, {
+database: data.database,
+design: ddoc,
+view: view,
+params: params
+});
+
+data.designDocs = new Documents.AllDocs(null, {
+database: data.database,
+params: {startkey: '"_design"',
+endkey: '"_design1"',
+include_docs: true}
+});
+
+var ddocInfo = {
+id: "_design/" + ddoc,
+    currView: view,
+    designDocs: data.designDocs
+};
+
+return {
+layout: "with_tabs_sidebar",
+
+          data: data,
+          // TODO: change dashboard-content
+          views: {
+            "#dashboard-content": new Documents.Views.AllDocsList({
+collection: data.indexedDocs,
+nestedView: Documents.Views.Row,
+viewList: true,
+ddocInfo: ddocInfo,
+params: params
+}),
+
+            "#sidebar-content": new Documents.Views.Sidebar({
+collection: data.designDocs,
+ddocInfo: ddocInfo
+}),
+
+            "#tabs": new Documents.Views.Tabs({
+collection: data.designDocs,
+database: data.database
+})
+},
+
+crumbs: [
+{"name": "Databases", "link": "/_all_dbs"},
+{"name": data.database.id, "link": Databases.databaseUrl(data.database)},
+{"name": ddoc + "/" + view, "link": data.indexedDocs.url()}
+],
+  // TODO: change to view URL
+  apiUrl: data.indexedDocs.url()
+  };
+}
+};*/
+
+Documents.RouteObjects = [/*new DocEditorRouteObject(),*/ new DocumentsRouteObject()];
 
   return Documents;
 });
