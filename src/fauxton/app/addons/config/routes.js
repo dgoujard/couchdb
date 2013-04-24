@@ -11,34 +11,42 @@
 // the License.
 
 define([
-  "app",
+       "app",
 
-  "api",
+       "api",
 
-  // Modules
-  "addons/config/resources"
+       // Modules
+       "addons/config/resources"
 ],
 
 function(app, FauxtonAPI, Config) {
-  var configRoute = function () {
-    var configs = new Config.Collection();
 
-    return {
-      layout: "one_pane",
-      crumbs: [
-        {"name": "Config","link": "_config"}
-      ],
-      views: {
-        "#dashboard-content": new Config.View({collection: configs})
-      },
-      apiUrl: configs.url()
-    };
-  };
+  var ConfigRouteObject = FauxtonAPI.RouteObject.extend({
+    layout: "one_pane",
 
-  Config.Routes = {
-    "_config": configRoute
-  };
+    crumbs: [
+      {"name": "Config","link": "_config"}
+    ],
 
+    apiUrl: function () {
+      this.configs.url();
+    },
+
+    routes: ["_config"],
+
+    views: function () {
+      this.configs = new Config.Collection();
+
+      this.setView("#dashboard-content", new Config.View({collection: this.configs}));
+      return {};
+    },
+
+    establish: function () {
+      return [this.configs.fetch()];
+    }
+  });
+
+
+  Config.RouteObjects = [new ConfigRouteObject()];
   return Config;
-
 });

@@ -42,7 +42,6 @@ function(app, FauxtonAPI, Log) {
     },
 
     route: function() {
-      console.log('boom');
     },
 
     establish: function() {

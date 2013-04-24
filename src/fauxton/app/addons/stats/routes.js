@@ -11,49 +11,40 @@
 // the License.
 
 define([
-  "app",
-  "api",
-  "addons/stats/resources",
-  "addons/stats/views"
+       "app",
+       "api",
+       "addons/stats/views"
 ],
 
-function(app, FauxtonAPI, Stats, Views) {
-  var data = {
-    stats: new Stats.Collection()
-  };
+function(app, FauxtonAPI, Stats) {
 
-  var deferred = FauxtonAPI.Deferred();
+  var StatsRouteObject = FauxtonAPI.RouteObject.extend({
+    layout: "with_sidebar",
 
-  var routeCallback = function() {
-    return {
-      layout: "with_sidebar",
+    routes: ["stats", "_stats"],
+    views: function () {
+      this.stats = new Stats.Collection();
 
-      data: data,
 
-      crumbs: [],
+      this.setView("#sidebar-content", new Views.StatSelect({
+        collection: this.stats
+      }));
 
-      views: {
-        "#sidebar-content": new Views.StatSelect({
-          collection: data.stats
-        }),
+      this.setView("#dashboard-content", new Views.Statistics({
+        collection: this.stats
+      }));
 
-        "#dashboard-content": new Views.Statistics({
-          collection: data.stats
-        })
-      },
+      return {};
+    },
 
-      establish: function() {
-        return [data.stats.fetch()];
-      },
+    establish: function() {
+      return [this.stats.fetch()];
+    },
 
-      apiUrl: "_stats"
-    };
-  };
+    apiUrl: "_stats"
+  });
 
-  Routes = {
-    "stats": routeCallback,
-    "_stats": routeCallback
-  };
+  Stats.RouteObjects = [new StatsRouteObject()];
 
-  return Routes;
+  return Stats;
 });

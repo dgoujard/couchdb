@@ -233,6 +233,52 @@ function(app, FauxtonAPI, Documents, Databases) {
 
 
 
+  var ChangesRouteObject = FauxtonAPI.RouteObject.extend({
+    layout: "with_tabs",
+
+    crumbs: function () {
+      return [
+        {"name": "Databases", "link": "/_all_dbs"},
+        {"name": this.database.id, "link": Databases.databaseUrl(this.database)},
+        {"name": "_changes", "link": "/_changes"}
+      ];
+    },
+
+    routes: ["database/:database/_changes(:params)"],
+
+    apiUrl: function() {
+      return this.database.changes.url();
+    },
+
+    route: function(route, params) {
+      this.databaseName = params[0];
+    },
+
+    views: function () {
+      this.database = new Databases.Model({id: this.databaseName});
+
+      var options = app.getParams();
+      this.database.buildChanges(options);
+
+
+      this.setView("#dashboard-content", new Documents.Views.Changes({
+        model: this.database
+      }));
+
+      this.setView("#tabs", new Documents.Views.Tabs({
+        collection: this.designDocs,
+        database: this.database,
+        active_id: 'changes'
+      }));
+
+      return {};
+    }
+
+  });
+
+
+
+
 
   /* Documents.Routes = {
   //"database/:database/:doc/code_editor": codeEditorCallback,
@@ -392,7 +438,7 @@ crumbs: [
 }
 };*/
 
-Documents.RouteObjects = [/*new DocEditorRouteObject(),*/ new DocumentsRouteObject()];
+  Documents.RouteObjects = [new DocEditorRouteObject(), new DocumentsRouteObject(), new ChangesRouteObject()];
 
   return Documents;
 });

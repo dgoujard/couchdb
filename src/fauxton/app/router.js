@@ -99,7 +99,6 @@ function(req, app, Initialize, FauxtonAPI, Fauxton, Layout, Databases, Documents
 
   var Router = app.router = Backbone.Router.extend({
     routes: {},
-    routeObjects: [],
 
     // These moduleRoutes functions are aguably better outside but
     // need access to the Router instance which is not created in this
@@ -110,13 +109,12 @@ function(req, app, Initialize, FauxtonAPI, Fauxton, Layout, Databases, Documents
 
     addModuleRouteObject: function(routeObject) {
       var self = this;
-      this.routeObjects.push(routeObject);
-      console.log(routeObject);
       var masterLayout = this.masterLayout;
       _.each(routeObject.get('routes'), function(route) {
         this.route(route, route.toString(), function() {
           if (self.activeRouteObject && routeObject !== self.activeRouteObject) {
             self.activeRouteObject.renderedState = false;
+            self.activeRouteObject.clearViews();
           }
 
           routeObject.render(route, masterLayout, Array.prototype.slice.call(arguments));
