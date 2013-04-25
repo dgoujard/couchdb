@@ -38,7 +38,6 @@ function(app, FauxtonAPI, Log) {
       this.logs = new Log.Collection();
       this.setView("#dashboard-content", new Log.Views.View({collection: this.logs}));
       this.setView("#sidebar-content", new Log.Views.FilterView({}));
-      return {};
     },
 
     route: function() {

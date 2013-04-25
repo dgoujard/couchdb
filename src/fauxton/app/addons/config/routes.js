@@ -38,7 +38,6 @@ function(app, FauxtonAPI, Config) {
       this.configs = new Config.Collection();
 
       this.setView("#dashboard-content", new Config.View({collection: this.configs}));
-      return {};
     },
 
     establish: function () {

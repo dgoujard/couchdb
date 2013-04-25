@@ -48,8 +48,6 @@ function(app, FauxtonAPI, Databases, Views) {
       this.sidebarView = this.setView("#sidebar-content", new Views.Sidebar({
           collection: this.databases
       }));
-
-      return {};
     },
 
     route: function() {

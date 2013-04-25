@@ -33,8 +33,6 @@ function(app, FauxtonAPI, Stats) {
       this.setView("#dashboard-content", new Views.Statistics({
         collection: this.stats
       }));
-
-      return {};
     },
 
     establish: function() {
