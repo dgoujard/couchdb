@@ -146,8 +146,8 @@ function(app, Fauxton) {
 
     renderWith: function(route, masterLayout, args) {
       var routeObject = this;
-      //this.route.apply(this, args);
 
+      this.masterLayout = masterLayout;
       masterLayout.setTemplate(this.layout);
       masterLayout.clearBreadcrumbs();
       var crumbs = this.get('crumbs');
@@ -225,6 +225,12 @@ function(app, Fauxton) {
     setView: function(selector, view) {
       this._views[selector] = view;
       return view;
+    },
+
+    rerenderView: function(selector) {
+      var view = this._views[selector];
+      this.masterLayout.setView(selector, view);
+      this.masterLayout.renderView(selector);
     },
 
     getViews: function() {

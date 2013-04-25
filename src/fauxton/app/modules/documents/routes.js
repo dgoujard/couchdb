@@ -189,7 +189,7 @@ function(app, FauxtonAPI, Documents, Databases) {
       ];
     },
 
-    routes: ["database/:database/_all_docs(:extra)"],
+    routes: ["database/:database/_all_docs(:extra)", "database/:database/_design/:ddoc/_view/:view"],
 
     apiUrl: function() {
       return this.data.database.allDocs.url();
@@ -197,12 +197,74 @@ function(app, FauxtonAPI, Documents, Databases) {
 
     route: function(route, params) {
       this.databaseName = params[0];
+
+      if (params.length > 2) {
+        this.view = params[2].replace(/\?.*$/,'');
+        this.ddoc = params[1];
+      } else {
+        delete this.view;
+        delete this.ddoc;
+      }
+    },
+
+    // this works for now, but it might be work considering having a renderWith function 
+    // that only renders a specific view and setups up that views establish beforehand.
+    rerender: function () {
+      var self = this,
+          options = app.getParams();
+
+      options.include_docs = true;
+      this.data.database.buildAllDocs(options);
+
+      this.updateDashboardView();
+
+      //this.documentsView.collection = this.data.database.allDocs;
+
+      $.when.apply(null, this.documentsView.establish()).then(function () {
+        //self.documentsView.render();
+        self.rerenderView('#dashboard-content');
+      });
+    },
+
+    updateDashboardView: function () {
+      var options = app.getParams();
+
+      if (this.view) {
+        var ddocInfo = {
+        id: "_design/" + this.ddoc,
+          currView: this.view,
+          designDocs: this.data.designDocs
+        };
+
+        this.data.indexedDocs = new Documents.IndexCollection(null, {
+          database: this.data.database,
+          design: this.ddoc,
+          view: this.view,
+          params: options
+        });
+
+        this.documentsView = this.setView('#dashboard-content',new Documents.Views.AllDocsList({
+            collection: this.data.indexedDocs,
+            nestedView: Documents.Views.Row,
+            viewList: true,
+            ddocInfo: ddocInfo,
+            params: options
+          }));
+
+      } else {
+
+        this.documentsView = this.setView("#dashboard-content", new Documents.Views.AllDocsList({
+          collection: this.data.database.allDocs
+        }));
+      }
+      
     },
 
     views: function () {
       this.data = {
         database: new Databases.Model({id:this.databaseName})
       };
+
       this.data.designDocs = new Documents.AllDocs(null, {
         database: this.data.database,
         params: {startkey: '"_design"',
@@ -210,14 +272,41 @@ function(app, FauxtonAPI, Documents, Databases) {
           include_docs: true}
       });
 
+
       var options = app.getParams();
       options.include_docs = true;
       this.data.database.buildAllDocs(options);
 
-      this.setView("#dashboard-content", new Documents.Views.AllDocsList({
-        collection: this.data.database.allDocs
-      }));
+      if (this.view) {
+        var ddocInfo = {
+        id: "_design/" + this.ddoc,
+          currView: this.view,
+          designDocs: this.data.designDocs
+        };
 
+        this.data.indexedDocs = new Documents.IndexCollection(null, {
+          database: this.data.database,
+          design: this.ddoc,
+          view: this.view,
+          params: options
+        });
+
+        this.documentsView = this.setView('#dashboard-content',new Documents.Views.AllDocsList({
+            collection: this.data.indexedDocs,
+            nestedView: Documents.Views.Row,
+            viewList: true,
+            ddocInfo: ddocInfo,
+            params: options
+          }));
+
+      } else {
+
+        this.documentsView = this.setView("#dashboard-content", new Documents.Views.AllDocsList({
+          collection: this.data.database.allDocs
+        }));
+      }
+
+      
       this.setView("#sidebar-content", new Documents.Views.Sidebar({
         collection: this.data.designDocs
       }));
@@ -226,8 +315,6 @@ function(app, FauxtonAPI, Documents, Databases) {
         collection: this.data.designDocs,
         database: this.data.database
       }));
-
-      return {};
     }
   });
 
@@ -270,8 +357,6 @@ function(app, FauxtonAPI, Documents, Databases) {
         database: this.database,
         active_id: 'changes'
       }));
-
-      return {};
     }
 
   });
