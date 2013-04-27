@@ -119,7 +119,6 @@ function(req, app, Initialize, FauxtonAPI, Fauxton, Layout, Databases, Documents
 
           routeObject.render(route, masterLayout, Array.prototype.slice.call(arguments));
 
-          self.activeRouteObject = routeObject;
         });
       }, this);
     },
@@ -175,6 +174,13 @@ function(req, app, Initialize, FauxtonAPI, Fauxton, Layout, Databases, Documents
       this.masterLayout.render();
 
       app.footer.render();
+    },
+
+    triggerRouteEvent: function(event, args) {
+      if (this.activeRouteObject) {
+        console.log("CALLING ROUTE EVENT ON", this.activeRouteObject, arguments);
+        this.activeRouteObject.trigger.apply(this.activeRouteObject, [event].concat(args));
+      }
     }
   });
 

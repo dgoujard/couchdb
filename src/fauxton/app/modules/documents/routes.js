@@ -182,11 +182,24 @@ function(app, FauxtonAPI, Documents, Databases) {
   var DocumentsRouteObject = FauxtonAPI.RouteObject.extend({
     layout: "with_tabs_sidebar",
 
+    events: {
+      "route:all_docs": "allDocs",
+      "route:all_design_docs": "allDesignDocs"
+    },
+
     crumbs: function () {
       return [
         {"name": "Databases", "link": "/_all_dbs"},
         {"name": this.data.database.id, "link": Databases.databaseUrl(this.data.database)}
       ];
+    },
+
+    allDocs: function() {
+      console.log("TRIGGERING all_docs ROUTE EVENT", arguments);
+    },
+
+    allDesignDocs: function() {
+      console.log("TRIGGERING all_design_docs ROUTE EVENT", arguments);
     },
 
     routes: ["database/:database/_all_docs(:extra)", "database/:database/_design/:ddoc/_view/:view"],
