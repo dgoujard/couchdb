@@ -97,6 +97,21 @@ function(req, app, Initialize, FauxtonAPI, Fauxton, Layout, Databases, Documents
     };
   };
 
+  FauxtonAPI.routeCallChain.registerBeforeRoute('no_deferred', function () {
+    console.log('This is a before route callback with no deferred.');
+  });
+
+  FauxtonAPI.routeCallChain.registerBeforeRoute('deferred', function () {
+    var deferred = $.Deferred();
+
+    setTimeout(function () {
+      console.log('hi this is a delayed called before each route.');
+      deferred.resolve();
+    }, 10);
+
+    return deferred;
+  });
+
   var Router = app.router = Backbone.Router.extend({
     routes: {},
 
@@ -110,14 +125,22 @@ function(req, app, Initialize, FauxtonAPI, Fauxton, Layout, Databases, Documents
     addModuleRouteObject: function(routeObject) {
       var self = this;
       var masterLayout = this.masterLayout;
+
       _.each(routeObject.get('routes'), function(route) {
         this.route(route, route.toString(), function() {
+          var args = arguments;
+
           if (self.activeRouteObject && routeObject !== self.activeRouteObject) {
             self.activeRouteObject.renderedState = false;
             self.activeRouteObject.clearViews();
           }
 
-          routeObject.render(route, masterLayout, Array.prototype.slice.call(arguments));
+          FauxtonAPI.routeCallChain.run().then(function () {
+            routeObject.initialize();
+            routeObject.render(route, masterLayout, Array.prototype.slice.call(args));
+          });
+
+          self.activeRouteObject = routeObject;
 
         });
       }, this);

@@ -182,6 +182,10 @@ function(app, FauxtonAPI, Documents, Databases) {
   var DocumentsRouteObject = FauxtonAPI.RouteObject.extend({
     layout: "with_tabs_sidebar",
 
+    initialize: function () {
+
+    },
+
     events: {
       "route:all_docs": "allDocs",
       "route:all_design_docs": "allDesignDocs"

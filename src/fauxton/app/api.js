@@ -96,6 +96,24 @@ function(app, Fauxton) {
     }
   });
 
+  FauxtonAPI.routeCallChain = {
+    callChain: {},
+
+    registerBeforeRoute: function (name, fn) {
+      this.callChain[name] = fn;
+    },
+
+    unregisterBeforeRoute: function (name) {
+      delete callChain[name];
+    },
+
+    run: function () {
+      var callChainDeferreds = _.map(this.callChain, function (cb) { return cb(); }); 
+      return $.when(null, callChainDeferreds );
+    }
+  };
+
+
   FauxtonAPI.RouteObject = function(options) {
     this._options = options;
 
