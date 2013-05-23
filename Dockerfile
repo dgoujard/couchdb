@@ -4,7 +4,7 @@
 # # 2) Download the docker-build helper script: wget https://raw.github.com/dotcloud/docker/v0.2.0/contrib/docker-build/docker-build 
 # # 3) Build all the layers: python docker-build < Dockerfile | tee build.out
 # # 4) Tag your new container to easily retrieve it: IMG=$(tail -n 1 build.out); docker tag $IMG $USER/couchdb;
-# # 5) Run it: docker run -p 5984 $USER/couchdb/bin/sh -e /usr/bin/couchdb -a /etc/couchdb/default.ini -a /etc/couchdb/local.ini -b -r 5 -p /var/run/couchdb/couchdb.pid -o /dev/null -e /dev/null -R
+# # 5) Run it: docker run $USER/couchdb
 # #
 
 version	0.1
